@@ -1,0 +1,18 @@
+{
+  "name": "mvp_web_backend_v.0.9.1",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "env-cmd -f ./dev.env nodemon src/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "env-cmd": "^10.1.0",
+    "nodemon": "^3.1.10"
+  }
+}
