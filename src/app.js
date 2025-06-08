@@ -1,3 +1,5 @@
+require("./database/mongoose");
+
 const express = require("express");
 const userRouter = require("./routers/user");
 const app = express();
