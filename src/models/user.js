@@ -21,8 +21,9 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      minlength: 8,
-      maxlength: 20,
+      // Defined in the pre save function below instead of here to avoid validation error when user is created
+      // minlength: 8,
+      // maxlength: 20,
       validate(value) {
         if (value.toLowerCase().includes("password")) {
           throw new Error("Password cannot contain 'password'");
@@ -94,6 +95,9 @@ userSchema.pre("save", async function (next) {
   const user = this;
 
   if (user.isModified("password")) {
+    if (user.password.length < 8 || user.password.length > 20) {
+      throw new Error("Password must be between 8 and 20 characters");
+    }
     user.password = await bcrypt.hash(user.password, 8);
   }
 
