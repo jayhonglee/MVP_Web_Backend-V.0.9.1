@@ -97,4 +97,14 @@ router.post("/users/logout", async (req, res) => {
   }
 });
 
+// Get user by id
+router.get("/users/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    res.send(user);
+  } catch (e) {
+    res.status(404).send({ message: e.message });
+  }
+});
+
 module.exports = router;
