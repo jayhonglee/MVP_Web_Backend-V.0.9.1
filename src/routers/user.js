@@ -1,12 +1,14 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
+const auth = require("../middleware/auth");
 const router = new express.Router();
 
 // Sign up
 router.post("/users/signup", async (req, res) => {
+  const user = new User(req.body);
+
   try {
-    const user = new User(req.body);
     await user.save();
     const token = await user.generateAuthToken();
 
@@ -40,24 +42,9 @@ router.post("/users/login", async (req, res) => {
 });
 
 // Verify user (get current user)
-router.get("/users/verify", async (req, res) => {
+router.get("/users/verify", auth, async (req, res) => {
   try {
-    const token = req.cookies.auth_token;
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findOne({
-      _id: decoded._id,
-      "tokens.token": token,
-    });
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    res.send({ user });
+    res.send({ user: req.user });
   } catch (e) {
     res.clearCookie("auth_token");
     res.status(401).send({ message: e.message });
@@ -65,24 +52,12 @@ router.get("/users/verify", async (req, res) => {
 });
 
 // Logout
-router.post("/users/logout", async (req, res) => {
+router.post("/users/logout", auth, async (req, res) => {
   try {
-    const token = req.cookies.auth_token;
-    if (!token) {
-      return res.status(200).send(); // Already logged out
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findOne({
-      _id: decoded._id,
-      "tokens.token": token,
-    });
-
-    if (user) {
-      // Remove the current token from user's tokens array
-      user.tokens = user.tokens.filter((t) => t.token !== token);
-      await user.save();
-    }
+    req.user.tokens = req.user.tokens.filter(
+      (token) => token.token !== req.token
+    );
+    await req.user.save();
 
     // Clear the auth cookie
     res.clearCookie("auth_token", {
@@ -97,13 +72,44 @@ router.post("/users/logout", async (req, res) => {
   }
 });
 
-// Get user by id
-router.get("/users/:id", async (req, res) => {
+// // Get user by id
+// router.get("/users/:id", async (req, res) => {
+//   try {
+//     const user = await User.findById(req.params.id);
+//     res.send(user);
+//   } catch (e) {
+//     res.status(404).send({ message: e.message });
+//   }
+// });
+
+// Update user (Update profile)
+router.patch("/users/me", auth, async (req, res) => {
+  const updates = Object.keys(req.body);
+  const allowedUpdates = [
+    "firstName",
+    "lastName",
+    "gender",
+    "dateOfBirth",
+    "address",
+    "introduction",
+    "interests",
+  ];
+  const isValidOperation = updates.every((update) =>
+    allowedUpdates.includes(update)
+  );
+
+  if (!isValidOperation) {
+    return res.status(400).send({ error: "Invalid update." });
+  }
+
   try {
-    const user = await User.findById(req.params.id);
-    res.send(user);
+    updates.forEach((update) => {
+      req.user[update] = req.body[update];
+    });
+    await req.user.save();
+    res.send(req.user);
   } catch (e) {
-    res.status(404).send({ message: e.message });
+    res.status(400).send(e.message);
   }
 });
 
