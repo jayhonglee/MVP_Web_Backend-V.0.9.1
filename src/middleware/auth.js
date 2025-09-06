@@ -37,6 +37,7 @@ const auth = async (req, res, next) => {
     req.user = user;
     next();
   } catch (e) {
+    console.log(e);
     // Clear the auth cookie
     res.clearCookie("auth_token", {
       httpOnly: true,

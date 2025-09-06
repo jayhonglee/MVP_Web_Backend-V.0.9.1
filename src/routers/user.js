@@ -1,6 +1,7 @@
 const express = require("express");
-const jwt = require("jsonwebtoken");
 const User = require("../models/user");
+const multer = require("multer");
+const sharp = require("sharp");
 const auth = require("../middleware/auth");
 const router = new express.Router();
 
@@ -110,6 +111,56 @@ router.patch("/users/me", auth, async (req, res) => {
     res.send(req.user);
   } catch (e) {
     res.status(400).send(e.message);
+  }
+});
+
+const upload = multer({
+  limits: {
+    fileSize: 2000000,
+  },
+  fileFilter(req, file, cb) {
+    if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+      return cb(
+        new Error("Please upload an image with .jpg, .jpeg, or .png extension")
+      );
+    }
+
+    cb(undefined, true);
+  },
+});
+
+// Upload avatar (upload profile picture)
+router.post(
+  "/users/me/avatar",
+  auth,
+  upload.single("avatar"),
+  async (req, res) => {
+    const buffer = await sharp(req.file.buffer)
+      .resize({ width: 250, height: 250 })
+      .png()
+      .toBuffer();
+    req.user.avatar = buffer;
+    await req.user.save();
+    res.send({ user: req.user, message: "Avatar updated successfully" });
+  },
+  (error, req, res) => {
+    res.status(400).send({ error: error.message });
+  }
+);
+
+// Read avatar (Read profile picture)
+router.get("/users/:id/avatar", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user || !user.avatar) {
+      throw new Error("Either user or the profile picture does not exist");
+    }
+
+    res.set("Content-Type", "image/png");
+    res.send(user.avatar);
+  } catch (e) {
+    res.status(404).send(e.message);
   }
 });
 
