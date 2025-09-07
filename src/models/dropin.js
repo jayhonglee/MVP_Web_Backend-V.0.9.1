@@ -17,11 +17,6 @@ const dropinSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    time: {
-      type: String,
-      //   required: true,
-      trim: true,
-    },
     location: {
       type: String,
       required: true,

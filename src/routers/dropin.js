@@ -49,10 +49,10 @@ router.post(
         navigation: navigation || "",
         description,
         host: req.user._id, // Set host to authenticated user
-        attendees: [],
+        attendees: [req.user._id],
         attendeesCount: 1,
-        interestTags: [],
-        entryFee: undefined,
+        interestTags: [type],
+        entryFee: req.body.entryFee || 0,
       };
 
       // Handle image upload if provided
