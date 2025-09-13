@@ -92,4 +92,29 @@ router.post(
   }
 );
 
+// Get specific dropin by ID
+router.get("/dropins/:id", async (req, res) => {
+  try {
+    const dropin = await Dropin.findById(req.params.id)
+      .populate("host", "name email")
+      .populate("attendees", "name email");
+
+    if (!dropin) {
+      return res.status(404).send({
+        message: "Dropin not found",
+      });
+    }
+
+    res.send({
+      message: "Dropin retrieved successfully",
+      dropin,
+    });
+  } catch (e) {
+    console.error("Error retrieving dropin:", e);
+    res.status(400).send({
+      message: e.message || "Error retrieving dropin",
+    });
+  }
+});
+
 module.exports = router;
