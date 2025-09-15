@@ -37,11 +37,6 @@ const dropinSchema = new mongoose.Schema(
     entryFee: {
       type: Number,
     },
-    category: {
-      type: String,
-      //   required: true,
-      trim: true,
-    },
     host: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
