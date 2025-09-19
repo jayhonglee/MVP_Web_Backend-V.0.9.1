@@ -92,6 +92,171 @@ router.post(
   }
 );
 
+router.get("/dropins/home", async (req, res) => {
+  try {
+    const currentDate = new Date();
+
+    // Use aggregation pipeline to efficiently get 10 dropins per type
+    const result = await Dropin.aggregate([
+      // Stage 1: Filter by future dates (uses date index)
+      {
+        $match: {
+          date: { $gte: currentDate },
+        },
+      },
+      // Stage 2: Sort by creation date (newest first)
+      {
+        $sort: { createdAt: -1 },
+      },
+      // Stage 3: Group by type and get top 10 from each
+      {
+        $group: {
+          _id: "$type",
+          dropins: {
+            $push: "$$ROOT",
+          },
+        },
+      },
+      // Stage 4: Limit to 10 dropins per type
+      {
+        $project: {
+          type: "$_id",
+          dropins: { $slice: ["$dropins", 10] },
+        },
+      },
+      // Stage 5: Lookup host information for all dropins
+      {
+        $unwind: "$dropins",
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "dropins.host",
+          foreignField: "_id",
+          as: "hostInfo",
+          pipeline: [
+            {
+              $project: {
+                firstName: 1,
+                lastName: 1,
+                avatar: 1,
+              },
+            },
+          ],
+        },
+      },
+      // Stage 6: Lookup attendees information
+      {
+        $lookup: {
+          from: "users",
+          localField: "dropins.attendees",
+          foreignField: "_id",
+          as: "attendeesInfo",
+          pipeline: [
+            {
+              $project: {
+                firstName: 1,
+                lastName: 1,
+                avatar: 1,
+              },
+            },
+          ],
+        },
+      },
+      // Stage 7: Unwind host array
+      {
+        $unwind: "$hostInfo",
+      },
+      // Stage 8: Group back by type
+      {
+        $group: {
+          _id: "$type",
+          dropins: {
+            $push: {
+              $mergeObjects: [
+                "$dropins", // This includes ALL fields including dropInImage
+                {
+                  host: "$hostInfo",
+                  attendees: "$attendeesInfo",
+                },
+              ],
+            },
+          },
+        },
+      },
+    ]);
+
+    // Transform to frontend format
+    const categories = {};
+
+    // Category emoji mapping
+    const categoryEmojis = {
+      Sports: "⚽",
+      "Books & Study": "📚",
+      "Travel & Outdoor": "🏕️",
+      "Art & Crafting": "🎨",
+      "Travel·Companion": "🚗",
+      "Local Chat": "💬",
+    };
+
+    // Process each type group
+    const allDropins = [];
+
+    result.forEach((typeGroup) => {
+      const transformedDropins = typeGroup.dropins.map((dropin) => {
+        const eventDate = new Date(dropin.date);
+
+        return {
+          id: dropin._id,
+          title: dropin.title,
+          category: dropin.type || "General",
+          date: eventDate.toISOString().split("T")[0],
+          time: eventDate.toTimeString().split(" ")[0].substring(0, 5),
+          location: dropin.location,
+          host: {
+            name: `${dropin.host.firstName} ${dropin.host.lastName}`,
+            avatar: dropin.host.avatar
+              ? `data:image/png;base64,${dropin.host.avatar.toString("base64")}`
+              : `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 100)}`,
+          },
+          attendees: dropin.attendeesCount || dropin.attendees.length,
+          maxAttendees: dropin.maxAttendees,
+          description: dropin.description,
+          interestTags: dropin.interestTags || [typeGroup._id],
+          dropInImage: dropin.dropInImage
+            ? `data:image/jpeg;base64,${dropin.dropInImage.toString("base64")}`
+            : null,
+          attendingPeople: dropin.attendees.slice(0, 5).map((attendee) => ({
+            name: `${attendee.firstName} ${attendee.lastName}`,
+            avatar: attendee.avatar
+              ? `data:image/png;base64,${attendee.avatar.toString("base64")}`
+              : `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 100)}`,
+          })),
+        };
+      });
+
+      // Add to "All" category
+      allDropins.push(...transformedDropins);
+
+      // Add to specific category
+      const categoryKey = `${categoryEmojis[typeGroup._id] || "📋"} ${typeGroup._id}`;
+      categories[categoryKey] = transformedDropins;
+    });
+
+    // Sort "All" by creation date and limit to 10
+    categories["All"] = allDropins
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 10);
+
+    res.send(categories);
+  } catch (e) {
+    console.error("Error retrieving home page data:", e);
+    res.status(500).send({
+      message: e.message || "Error retrieving home page data",
+    });
+  }
+});
+
 // Get specific dropin by ID
 router.get("/dropins/:id", async (req, res) => {
   try {

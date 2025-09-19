@@ -6,6 +6,7 @@ const dropinSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      index: true,
     },
     title: {
       type: String,
@@ -16,6 +17,7 @@ const dropinSchema = new mongoose.Schema(
       type: Date,
       required: true,
       trim: true,
+      index: true,
     },
     location: {
       type: String,
@@ -64,6 +66,8 @@ const dropinSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+dropinSchema.index({ date: 1, type: 1, createdAt: -1 });
 
 const Dropin = mongoose.model("Dropin", dropinSchema);
 
