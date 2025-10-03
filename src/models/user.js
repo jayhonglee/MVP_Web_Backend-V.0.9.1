@@ -52,6 +52,16 @@ const userSchema = new mongoose.Schema(
         },
       },
     ],
+    createdDropins: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: "Dropin",
+      trim: true,
+    },
+    joinedDropins: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: "Dropin",
+      trim: true,
+    },
   },
   {
     timestamps: true,

@@ -3,6 +3,7 @@ const User = require("../models/user");
 const multer = require("multer");
 const sharp = require("sharp");
 const auth = require("../middleware/auth");
+const Dropin = require("../models/dropin");
 const router = new express.Router();
 
 // Sign up
@@ -161,6 +162,16 @@ router.get("/users/:id/avatar", async (req, res) => {
     res.send(user.avatar);
   } catch (e) {
     res.status(404).send(e.message);
+  }
+});
+
+router.get("/users/me/createdDropins", auth, async (req, res) => {
+  try {
+    const createdDropins = await req.user.createdDropins;
+    const dropinsData = await Dropin.find({ _id: { $in: createdDropins } });
+    res.send(dropinsData);
+  } catch (e) {
+    res.status(400).send(e.message);
   }
 });
 

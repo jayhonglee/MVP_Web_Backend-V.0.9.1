@@ -4,6 +4,7 @@ const multer = require("multer");
 const sharp = require("sharp");
 const auth = require("../middleware/auth");
 const router = new express.Router();
+const User = require("../models/user");
 
 // Create dropin
 const upload = multer({
@@ -73,6 +74,9 @@ router.post(
       // Create and save dropin
       const dropin = new Dropin(dropinData);
       await dropin.save();
+
+      req.user.createdDropins.push(dropin._id);
+      await req.user.save();
 
       res.status(201).send({
         message: "Dropin created successfully",
@@ -278,6 +282,80 @@ router.get("/dropins/:id", async (req, res) => {
     console.error("Error retrieving dropin:", e);
     res.status(400).send({
       message: e.message || "Error retrieving dropin",
+    });
+  }
+});
+
+router.post("/dropins/:id/join", auth, async (req, res) => {
+  try {
+    const dropinId = req.params.id;
+    const userId = req.user._id;
+
+    // Find the dropin
+    const dropin = await Dropin.findById(dropinId);
+    if (!dropin) {
+      return res.status(404).send({
+        message: "Dropin not found",
+      });
+    }
+
+    // Check if dropin is in the future
+    if (dropin.date < new Date()) {
+      return res.status(400).send({
+        message: "Cannot join past dropins",
+      });
+    }
+
+    // Check if user is already the host
+    if (dropin.host.toString() === userId.toString()) {
+      return res.status(400).send({
+        message: "Host cannot join their own dropin",
+      });
+    }
+
+    // Check if user is already an attendee
+    if (dropin.attendees.includes(userId)) {
+      return res.status(400).send({
+        message: "You have already joined this dropin",
+      });
+    }
+
+    // Check max attendees limit
+    const maxAttendees = dropin.maxAttendees || 20;
+    if (dropin.attendees.length >= maxAttendees) {
+      return res.status(400).send({
+        message: "This dropin is full",
+      });
+    }
+
+    // Update dropin attendees
+    await Dropin.findByIdAndUpdate(
+      dropinId,
+      {
+        $addToSet: { attendees: userId },
+        $inc: { attendeesCount: 1 },
+      },
+      { new: true }
+    );
+
+    // Update user's joinedDropins
+    await User.findByIdAndUpdate(userId, {
+      $addToSet: { joinedDropins: dropinId },
+    });
+
+    // Populate the updated dropin
+    const populatedDropin = await Dropin.findById(dropinId)
+      .populate("host", "firstName lastName avatar")
+      .populate("attendees", "firstName lastName avatar");
+
+    res.send({
+      message: "Successfully joined dropin",
+      dropin: populatedDropin,
+    });
+  } catch (e) {
+    console.error("Error joining dropin:", e);
+    res.status(400).send({
+      message: e.message || "Error joining dropin",
     });
   }
 });
