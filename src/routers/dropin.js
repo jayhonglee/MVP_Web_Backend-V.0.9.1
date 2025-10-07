@@ -224,7 +224,7 @@ router.get("/dropins/home", async (req, res) => {
             name: `${dropin.host.firstName} ${dropin.host.lastName}`,
             avatar: dropin.host.avatar
               ? `data:image/png;base64,${dropin.host.avatar.toString("base64")}`
-              : `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 100)}`,
+              : null,
           },
           attendees: dropin.attendeesCount || dropin.attendees.length,
           maxAttendees: dropin.maxAttendees,
@@ -237,7 +237,7 @@ router.get("/dropins/home", async (req, res) => {
             name: `${attendee.firstName} ${attendee.lastName}`,
             avatar: attendee.avatar
               ? `data:image/png;base64,${attendee.avatar.toString("base64")}`
-              : `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 100)}`,
+              : null,
           })),
         };
       });
