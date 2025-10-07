@@ -195,12 +195,15 @@ router.get("/dropins/home", async (req, res) => {
 
     // Category emoji mapping
     const categoryEmojis = {
-      Sports: "⚽",
-      "Books & Study": "📚",
-      "Travel & Outdoor": "🏕️",
       "Art & Crafting": "🎨",
-      "Travel·Companion": "🚗",
+      "Books & Study": "📚",
+      "Club Activities": "🎤",
+      "Food & Drinks": "🍽️",
+      Gaming: "🎮",
       "Local Chat": "💬",
+      Party: "🎉",
+      Sports: "⚽",
+      "Travel & Outdoor": "🏕️",
     };
 
     // Process each type group
@@ -299,51 +302,57 @@ router.post("/dropins/:id/join", auth, async (req, res) => {
       });
     }
 
-    // Check if dropin is in the future
+    // Find the user to check their joinedDropins
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).send({
+        message: "User not found",
+      });
+    }
+
+    // Check if user is already in the dropin's attendees list
+    const isInAttendees = dropin.attendees.some(
+      (attendeeId) => attendeeId.toString() === userId.toString()
+    );
+
+    // Check if dropin is already in user's joinedDropins list
+    const isInJoinedDropins = user.joinedDropins.some(
+      (joinedId) => joinedId.toString() === dropinId.toString()
+    );
+
+    // If user is already joined (either in attendees or joinedDropins), return error
+    if (isInAttendees || isInJoinedDropins) {
+      return res.status(400).send({
+        message: "You have already joined this dropin",
+      });
+    }
+
+    // Check if dropin is in the past
     if (dropin.date < new Date()) {
       return res.status(400).send({
         message: "Cannot join past dropins",
       });
     }
 
-    // Check if user is already the host
+    // Check if user is the host
     if (dropin.host.toString() === userId.toString()) {
       return res.status(400).send({
         message: "Host cannot join their own dropin",
       });
     }
 
-    // Check if user is already an attendee
-    if (dropin.attendees.includes(userId)) {
-      return res.status(400).send({
-        message: "You have already joined this dropin",
-      });
-    }
-
-    // Check max attendees limit
-    const maxAttendees = dropin.maxAttendees || 20;
-    if (dropin.attendees.length >= maxAttendees) {
-      return res.status(400).send({
-        message: "This dropin is full",
-      });
-    }
-
-    // Update dropin attendees
-    await Dropin.findByIdAndUpdate(
-      dropinId,
-      {
-        $addToSet: { attendees: userId },
-        $inc: { attendeesCount: 1 },
-      },
-      { new: true }
-    );
+    // Update dropin attendees and increment count
+    await Dropin.findByIdAndUpdate(dropinId, {
+      $addToSet: { attendees: userId },
+      $inc: { attendeesCount: 1 },
+    });
 
     // Update user's joinedDropins
     await User.findByIdAndUpdate(userId, {
       $addToSet: { joinedDropins: dropinId },
     });
 
-    // Populate the updated dropin
+    // Get updated dropin with populated data
     const populatedDropin = await Dropin.findById(dropinId)
       .populate("host", "firstName lastName avatar")
       .populate("attendees", "firstName lastName avatar");
