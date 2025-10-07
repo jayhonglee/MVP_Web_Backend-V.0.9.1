@@ -175,4 +175,14 @@ router.get("/users/me/createdDropins", auth, async (req, res) => {
   }
 });
 
+router.get("/users/me/joinedDropins", auth, async (req, res) => {
+  try {
+    const joinedDropins = await req.user.joinedDropins;
+    const dropinsData = await Dropin.find({ _id: { $in: joinedDropins } });
+    res.send(dropinsData);
+  } catch (e) {
+    res.status(400).send(e.message);
+  }
+});
+
 module.exports = router;
