@@ -44,8 +44,35 @@ router.get("/groupChats/me", auth, async (req, res) => {
   try {
     const groupChats = await GroupChat.find({
       members: { $in: [req.user._id] },
+    }).populate({
+      path: "dropin",
+      select: "title date location description dropInImage host attendeesCount",
+      populate: {
+        path: "host",
+        select: "firstName lastName avatar",
+      },
     });
-    res.status(200).send(groupChats);
+
+    // Transform the response to include base64 image data
+    const transformedGroupChats = groupChats.map((groupChat) => {
+      const groupChatObj = groupChat.toObject();
+
+      if (groupChatObj.dropin && groupChatObj.dropin.dropInImage) {
+        groupChatObj.dropin.dropInImage = `data:image/jpeg;base64,${groupChatObj.dropin.dropInImage.toString("base64")}`;
+      }
+
+      if (
+        groupChatObj.dropin &&
+        groupChatObj.dropin.host &&
+        groupChatObj.dropin.host.avatar
+      ) {
+        groupChatObj.dropin.host.avatar = `data:image/png;base64,${groupChatObj.dropin.host.avatar.toString("base64")}`;
+      }
+
+      return groupChatObj;
+    });
+
+    res.status(200).send(transformedGroupChats);
   } catch (e) {
     res.status(500).send(e.message);
   }
