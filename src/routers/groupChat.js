@@ -6,9 +6,17 @@ const router = new express.Router();
 // Create a new group chat
 router.post("/groupChats", auth, async (req, res) => {
   try {
+    // Extract dropinId from request body
+    const dropinId = req.body.dropinId;
+
+    // Validate dropinId
+    if (!dropinId || typeof dropinId !== "string" || dropinId.trim() === "") {
+      return res.status(400).send("Dropin ID is required");
+    }
+
     // Check if a group chat for the same dropin already exists
     const existingGroupChat = await GroupChat.findOne({
-      dropin: req.body.dropin,
+      dropin: dropinId,
     });
 
     if (existingGroupChat) {
@@ -20,7 +28,7 @@ router.post("/groupChats", auth, async (req, res) => {
     // If no existing group chat, create a new one
     const newGroupChat = new GroupChat({
       members: [req.user._id],
-      dropin: req.body.dropin,
+      dropin: dropinId,
     });
 
     await newGroupChat.save();

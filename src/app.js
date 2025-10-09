@@ -5,6 +5,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const userRouter = require("./routers/user");
 const dropinRouter = require("./routers/dropin");
+const groupChatRouter = require("./routers/groupChat");
 const app = express();
 
 // Enable CORS for your frontend
@@ -19,5 +20,6 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(userRouter);
 app.use(dropinRouter);
+app.use(groupChatRouter);
 
 module.exports = app;
