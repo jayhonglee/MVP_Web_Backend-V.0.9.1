@@ -5,6 +5,7 @@ const sharp = require("sharp");
 const auth = require("../middleware/auth");
 const router = new express.Router();
 const User = require("../models/user");
+const GroupChat = require("../models/groupChat");
 
 // Create dropin
 const upload = multer({
@@ -310,6 +311,14 @@ router.post("/dropins/:id/join", auth, async (req, res) => {
       });
     }
 
+    // find the group chat
+    const groupChat = await GroupChat.findOne({ dropin: dropinId });
+    if (!groupChat) {
+      return res.status(404).send({
+        message: "Group chat not found",
+      });
+    }
+
     // Check if user is already in the dropin's attendees list
     const isInAttendees = dropin.attendees.some(
       (attendeeId) => attendeeId.toString() === userId.toString()
@@ -321,7 +330,11 @@ router.post("/dropins/:id/join", auth, async (req, res) => {
     );
 
     // If user is already joined (either in attendees or joinedDropins), return error
-    if (isInAttendees || isInJoinedDropins) {
+    if (
+      isInAttendees ||
+      isInJoinedDropins ||
+      groupChat.members.includes(userId)
+    ) {
       return res.status(400).send({
         message: "You have already joined this dropin",
       });
@@ -350,6 +363,11 @@ router.post("/dropins/:id/join", auth, async (req, res) => {
     // Update user's joinedDropins
     await User.findByIdAndUpdate(userId, {
       $addToSet: { joinedDropins: dropinId },
+    });
+
+    // Update group chat members
+    await GroupChat.findByIdAndUpdate(groupChat._id, {
+      $addToSet: { members: userId },
     });
 
     // Get updated dropin with populated data
