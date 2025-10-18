@@ -78,4 +78,29 @@ router.get("/groupChats/me", auth, async (req, res) => {
   }
 });
 
+// Get a list of user data in a group chat
+router.get("/groupChats/:id/users", auth, async (req, res) => {
+  try {
+    const groupChat = await GroupChat.findById(req.params.id).populate({
+      path: "members",
+      select: "firstName lastName avatar",
+    });
+    if (!groupChat) {
+      return res.status(404).send("Group chat not found");
+    }
+
+    const transformedUsers = groupChat.members.map((user) => {
+      return {
+        _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatar: user.avatar,
+      };
+    });
+    res.status(200).send(transformedUsers);
+  } catch (e) {
+    res.status(500).send(e.message);
+  }
+});
+
 module.exports = router;
