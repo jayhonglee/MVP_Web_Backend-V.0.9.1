@@ -1,7 +1,7 @@
 {
   "name": "mvp_web_backend_v.0.9.1",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
     "dev": "node scripts/startDev.js",
     "start": "node src/index.js",
