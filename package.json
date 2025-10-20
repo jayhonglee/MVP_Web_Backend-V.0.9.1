@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "node scripts/startDev.js"
+    "dev": "node scripts/startDev.js",
+    "start": "node src/index.js",
+    "build": "echo 'No build step required'"
   },
   "author": "",
   "license": "ISC",
