@@ -12,7 +12,10 @@ const app = express();
 // Enable CORS for your frontend
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: [
+      "http://localhost:5173",
+      "https://mvp-web-v-0-9-1-qhuq8grr8-jayhonglees-projects.vercel.app/",
+    ],
     credentials: true,
   })
 );
