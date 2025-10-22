@@ -13,10 +13,12 @@ const auth = async (req, res, next) => {
     // Check for token in cookies first
     if (req.cookies && req.cookies.auth_token) {
       token = req.cookies.auth_token;
+      console.log("token in cookies:", token);
     }
     // Fall back to Authorization header
     else if (req.header("Authorization")) {
       token = req.header("Authorization").replace("Bearer ", "");
+      console.log("token in header:", token);
     }
 
     if (!token) {
