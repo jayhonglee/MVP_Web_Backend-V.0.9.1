@@ -15,8 +15,8 @@ router.post("/users/signup", async (req, res) => {
     const token = await user.generateAuthToken();
 
     res.cookie("auth_token", token, {
-      // httpOnly: false,
-      // secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      secure: true,
       sameSite: "none",
     });
     res.status(201).send({ user, token });
@@ -33,8 +33,8 @@ router.post("/users/login", async (req, res) => {
     const token = await user.generateAuthToken();
 
     res.cookie("auth_token", token, {
-      // httpOnly: false,
-      // secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      secure: true,
       sameSite: "none",
     });
     res.send({ user, token });
