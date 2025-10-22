@@ -17,7 +17,7 @@ router.post("/users/signup", async (req, res) => {
     res.cookie("auth_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "none",
     });
     res.status(201).send({ user, token });
   } catch (e) {
@@ -35,7 +35,7 @@ router.post("/users/login", async (req, res) => {
     res.cookie("auth_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "none",
     });
     res.send({ user, token });
   } catch (e) {
@@ -65,7 +65,7 @@ router.post("/users/logout", auth, async (req, res) => {
     res.clearCookie("auth_token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "none",
     });
 
     res.status(200).send();

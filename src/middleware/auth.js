@@ -46,7 +46,7 @@ const auth = async (req, res, next) => {
     res.clearCookie("auth_token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "none",
     });
     res.status(401).send({ error: "Please authenticate." });
   }
