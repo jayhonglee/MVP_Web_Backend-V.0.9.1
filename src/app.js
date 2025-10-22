@@ -15,6 +15,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "https://mvp-web-v-0-9-1-qhuq8grr8-jayhonglees-projects.vercel.app",
+      "https://hangoutpeople.com",
       /^https:\/\/mvp-web-v-0-9-1.*\.vercel\.app$/, // Wildcard for all Vercel deployments
     ],
     credentials: true,
