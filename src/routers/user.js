@@ -117,12 +117,14 @@ router.patch("/users/me", auth, async (req, res) => {
 
 const upload = multer({
   limits: {
-    fileSize: 2000000,
+    fileSize: 5000000,
   },
   fileFilter(req, file, cb) {
-    if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+    if (!file.originalname.match(/\.(jpg|jpeg|png|webp)$/)) {
       return cb(
-        new Error("Please upload an image with .jpg, .jpeg, or .png extension")
+        new Error(
+          "Please upload an image with .jpg, .jpeg, .png, or .webp extension"
+        )
       );
     }
 
